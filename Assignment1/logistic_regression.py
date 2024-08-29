@@ -3,26 +3,28 @@ import  pandas as pd
 
 class LogisticRegression():
     
-    def __init__(self, learning_rate=0.000001, step_limit = 100000, presicion = 0.00000001):
+    def __init__(self, learning_rate=0.00001, step_limit = 10000000, presicion = 1e-15):
         # NOTE: Feel free to add any hyperparameters 
         # (with defaults) as you see fit
         self.learning_rate = learning_rate
         self.step_limit = step_limit
         self.presicion = presicion
-        self.w = None
+        self.weights = None
         
-
-    def cost_constant(self, X, y):
-        return (self.a-y)
-
     def cost(self, X, y):
-        return (self.a-y)*X
+        return -(1/self.m) * np.sum(y*np.log(self.a)+(1-y)*np.log(1-self.a))
+
+    def db(self, y):
+        return (1/self.m) * np.sum(self.a-y)
+
+    def dw(self, X, y):
+        return (1/self.m) * np.dot(self.a-y, X.T)
 
     def update_value(self, X, y):
         prev_w = self.w.copy()
 
-        self.w[0] -= self.cost_constant(X, y) * self.learning_rate
-        self.w[1:] -= self.cost(X,y) * self.learning_rate
+        self.b -= self.db(y) * self.learning_rate
+        self.w -= self.dw(X,y).T * self.learning_rate
         return prev_w
 
     def fit(self, X, y):
@@ -34,26 +36,28 @@ class LogisticRegression():
                 m rows (#samples) and n columns (#features)
             y (array<m>): a vector of floats
         """
-        X = X.values
-        y = y.values
-
-        if len(X.shape) == 1:
-            X = X.reshape(-1, 1)
-        
-        self.w = np.zeros(X.shape[1] + 1)
-        diff =[np.inf] * len(self.w) 
+        self.m = X.shape[1]
+        n = X.shape[0]
+        self.weights = np.ones((n+1,1))-0.5
+        self.b = self.weights[0]
+        self.w = self.weights[1:]
+        diff =[np.inf] * len(self.weights) 
         steps = 0
+        cost_list = []
+        
 
-        b = self.w[0].copy()
-        wt = self.w[1:].T.copy()
-        self.z = wt*X+b
-        self.a = 1/(1+np.exp(-self.z))
-
-        while all([abs(difference)>self.presicion for difference in diff]) and steps<self.step_limit:
+        for steps in range(self.step_limit):
+            self.z = np.dot(self.w.T, X)+self.b
+            self.a = 1/(1+np.exp(-self.z))
             prev = self.update_value(X,y)
             diff = prev - self.w
             steps += 1
-        
+
+            cost_list.append(self.cost(X,y))
+
+            if not all([abs(difference)>self.presicion for difference in diff]):
+                break
+        return cost_list
     
     def predict(self, X):
         """
@@ -68,8 +72,16 @@ class LogisticRegression():
         Returns:
             A length m array of floats
         """
-        b = self.w[0].copy()
-        wt = self.w[1:].T.copy()
-        z = wt*X+b
-        return 1/(1+np.exp(-z))
+        self.z = np.dot(self.w.T, X)+self.b
+        a = 1/(1+np.exp(-self.z))
+        return a
 
+    def test(self, X, y):
+
+        self.z = np.dot(self.w.T, X)+self.b
+        self.a = 1/(1+np.exp(-self.z))
+        A = np.array(self.a > 0.5, dtype='int64')
+
+        accuracy = (1-abs(np.sum(A-y))/y.shape[1])
+
+        print('The accuracy of the test is %s' %accuracy)
