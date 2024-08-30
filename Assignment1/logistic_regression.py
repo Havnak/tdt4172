@@ -1,13 +1,14 @@
 import numpy as np
 import  pandas as pd
 
+
 class LogisticRegression():
     
-    def __init__(self, learning_rate=0.00001, step_limit = 10000000, presicion = 1e-15):
+    def __init__(self, learning_rate=0.00001, epochs = 10000000, presicion = 1e-15):
         # NOTE: Feel free to add any hyperparameters 
         # (with defaults) as you see fit
         self.learning_rate = learning_rate
-        self.step_limit = step_limit
+        self.epochs = epochs
         self.presicion = presicion
         self.weights = None
         
@@ -20,7 +21,7 @@ class LogisticRegression():
     def dw(self, X, y):
         return (1/self.m) * np.dot(self.a-y, X.T)
 
-    def update_value(self, X, y):
+    def update_weights(self, X, y):
         prev_w = self.w.copy()
 
         self.b -= self.db(y) * self.learning_rate
@@ -46,10 +47,10 @@ class LogisticRegression():
         cost_list = []
         
 
-        for steps in range(self.step_limit):
+        for steps in range(self.epochs):
             self.z = np.dot(self.w.T, X)+self.b
             self.a = 1/(1+np.exp(-self.z))
-            prev = self.update_value(X,y)
+            prev = self.update_weights(X,y)
             diff = prev - self.w
             steps += 1
 
@@ -72,16 +73,16 @@ class LogisticRegression():
         Returns:
             A length m array of floats
         """
-        self.z = np.dot(self.w.T, X)+self.b
+        self.z = np.matmul(self.w.T, X)+self.b
         a = 1/(1+np.exp(-self.z))
-        return a
+        return np.array(a>0.5, dtype='int64')
 
-    def test(self, X, y):
+    def accuracy(self, X, y):
+        accuracy = np.average(1-np.abs(self.predict(X)-y))
+        print(f'The accuracy is {accuracy}')
+        return accuracy
 
-        self.z = np.dot(self.w.T, X)+self.b
-        self.a = 1/(1+np.exp(-self.z))
-        A = np.array(self.a > 0.5, dtype='int64')
+        
+        
 
-        accuracy = (1-abs(np.sum(A-y))/y.shape[1])
 
-        print('The accuracy of the test is %s' %accuracy)
