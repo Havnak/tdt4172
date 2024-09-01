@@ -60,7 +60,7 @@ class LogisticRegression():
                 break
         return cost_list
     
-    def predict(self, X):
+    def predict(self, X, treshold=0.5):
         """
         Generates predictions
         
@@ -69,20 +69,58 @@ class LogisticRegression():
         Args:
             X (array<m,n>): a matrix of floats with 
                 m rows (#samples) and n columns (#features)
-            
+            treshold (float64)
+
         Returns:
             A length m array of floats
         """
         self.z = np.matmul(self.w.T, X)+self.b
         a = 1/(1+np.exp(-self.z))
-        return np.array(a>0.5, dtype='int64')
+        return np.array(a>treshold, dtype='int64')
 
     def accuracy(self, X, y):
         accuracy = np.average(1-np.abs(self.predict(X)-y))
         print(f'The accuracy is {accuracy}')
         return accuracy
 
-        
+    def roc_curve(self, X, y):
+        """
+        Generates ROC-curve
+
+        Note: should be called after .fit()
+
+        Args:
+            X (array<m,n>): a matrix of floats with 
+                m rows (#samples) and n columns (#features)
+            y (array<m>): a vector of floats
+
+        Returns:
+            A 2d matrix with TPR and FPR rates.
+        """
+        roc = np.array([[],[]])
+
+        def tpr(Y_pred, Y_true):
+            true_positives = np.sum((Y_pred == 1) & (Y_true == 1))
+            false_negatives = np.sum((Y_pred == 0) & (Y_true == 1))
+
+            return true_positives / (true_positives + false_negatives)
+
+        def fpr(Y_pred, Y_true):
+            false_positives = np.sum((Y_pred == 1) & (Y_true == 0))
+            true_negatives = np.sum((Y_pred == 0) & (Y_true == 0))
+
+            return false_positives / (false_positives + true_negatives)
+            
+
+            
+
+        for treshold in np.linspace(0,1,10000):
+            y_pred = self.predict(X, treshold)
+            TPR = tpr(y_pred, y)
+            FPR = fpr(y_pred, y)
+            roc = np.append(roc, [[FPR], [TPR]], axis=1)
+
+        return roc
         
 
 
