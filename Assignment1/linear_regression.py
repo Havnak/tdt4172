@@ -24,6 +24,9 @@ class LinearRegression():
         self.b[1:] -= self.lstsq(X,y) * self.learning_rate
         return prev_b
 
+    def output_weights(self):
+        return list(self.b)
+
     def fit(self, X, y):
         """
         Estimates parameters for the classifier
@@ -61,5 +64,4 @@ class LinearRegression():
         Returns:
             A length m array of floats
         """
-
         return self.b[0] + X*self.b[1:]
